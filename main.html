@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset=utf-8>
+  <title>three.js app</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%
+    }
+  </style>
+</head>
+
+<body>
+  <script src="js/three.js"></script>
+  <script src="js/OrbitControls.js"></script>
+  <script>
+
+    // Renderer
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x1e1e1e);
+    document.body.appendChild(renderer.domElement);
+
+    // Scene
+    var scene = new THREE.Scene();
+
+    // Camera
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
+    camera.position.set(25, 15, 15);
+    camera.lookAt(0, 0, 0);
+
+    // Axes
+    var axes = new THREE.AxesHelper(100);
+    scene.add(axes);
+
+    // Controls
+    var controls = new THREE.OrbitControls(camera, renderer.domElement);
+    // Add this only if there is no animation loop (requestAnimationFrame)
+    //controls.addEventListener('change', function () { renderer.render(scene, camera); }); 
+
+    // PLaceholder time parameter
+    var t = 0;
+
+    // Earths orbital path
+    var earthOrbitPath = new THREE.EllipseCurve(
+      0, 0,            // ax, aY
+      10, 8,           // xRadius, yRadius
+      0, 2 * Math.PI,  // aStartAngle, aEndAngle
+      false,           // aClockwise
+      0                // aRotation
+    );
+
+    // Draw earths orbit
+    var earthOrbit = new THREE.Line(
+      new THREE.Geometry().setFromPoints(earthOrbitPath.getSpacedPoints(50)),
+      new THREE.LineBasicMaterial({ color: 0x3299ff })
+    );
+    earthOrbit.rotateX(Math.PI / 2);
+    scene.add(earthOrbit);
+
+    // Sun
+    var sun = celBody(new THREE.Vector3(0, 0, 0), 1, 0xfdb813);
+    scene.add(sun);
+
+    // Earth
+    var earth = celBody(earthOrbitPath.getPointAt(t), 0.15, 0x3299ff);
+    scene.add(earth);
+
+    animate();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Update camera position based on the controls
+      controls.update();
+
+      t = (t + 0.002) % 1;
+
+      // TODO: implement motion as a method on celBody
+      var p = earthOrbitPath.getPointAt(t);
+      var rotP = new THREE.Vector3(p.x, p.y, 0).applyAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+      earth.position.x = rotP.x;
+      earth.position.y = rotP.y;
+      earth.position.z = rotP.z;
+
+      renderer.render(scene, camera);
+    }
+
+    function celBody(position, radius, color) {
+      var s = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 32, 32),
+        new THREE.MeshBasicMaterial({
+          color: color
+        }));
+      s.position.copy(position);
+      return s;
+    }
+
+  </script>
+</body>
+
+</html>
